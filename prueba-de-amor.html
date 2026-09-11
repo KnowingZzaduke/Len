@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Cuánto me amas?</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap');
+
+  :root{
+    --cream:#FFF4F1;
+    --blush:#FFE1E8;
+    --rose:#FF6F8E;
+    --rose-dark:#D6335A;
+    --wine:#5C1B33;
+    --line:#2B1620;
+    --teal:#A9D9E0;
+    --gold:#E9C08D;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--cream);
+    color:var(--wine);
+    font-family:'Poppins', sans-serif;
+    overflow:hidden;
+    transition:background 1.6s ease;
+  }
+  body.sky-mode{
+    background:linear-gradient(180deg, #90a8d6 0%, #c9a2d6 28%, #f0a8c2 52%, #ffc9a8 76%, #fff1e6 100%);
+  }
+
+  #bg-canvas{
+    position:fixed; inset:0; width:100%; height:100%;
+    z-index:0; display:block;
+  }
+
+  #app{
+    position:relative; z-index:1;
+    height:100dvh; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+
+  .scene{
+    display:none;
+    width:100%; max-width:460px;
+    flex-direction:column; align-items:center;
+    text-align:center;
+    animation:rise .5s ease;
+  }
+  .scene.active{display:flex;}
+
+  @keyframes rise{
+    from{opacity:0; transform:translateY(14px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  h1,h2{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    margin:0 0 6px;
+    color:var(--wine);
+  }
+
+  /* ---------- SCENE 1: PRUEBA ---------- */
+  #mascot{ width:150px; height:150px; margin-bottom:6px; }
+  #mascot g{ display:none; }
+  #mascot[data-state="neutral"] .st-neutral,
+  #mascot[data-state="hurt"] .st-hurt,
+  #mascot[data-state="cry"] .st-cry,
+  #mascot[data-state="happy"] .st-happy,
+  #mascot[data-state="love"] .st-love{ display:block; }
+
+  .question{
+    font-size:22px;
+    margin:6px 0 2px;
+    min-height:30px;
+  }
+  .percent{
+    font-family:'Playfair Display', serif;
+    font-size:44px;
+    font-weight:700;
+    color:var(--rose-dark);
+    margin:2px 0 18px;
+    min-height:56px;
+  }
+
+  .gauge-wrap{ position:relative; width:280px; height:150px; }
+  .gauge-wrap svg{ width:100%; height:100%; }
+  .needle{
+    position:absolute; left:50%; bottom:8px;
+    width:4px; height:110px;
+    background:var(--wine);
+    border-radius:4px;
+    transform-origin:bottom center;
+    transform:translateX(-50%) rotate(-90deg);
+    transition:transform .18s ease-out;
+  }
+  .needle::after{
+    content:''; position:absolute; top:-8px; left:50%;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--rose-dark);
+    transform:translateX(-50%);
+  }
+  .gauge-label{
+    position:absolute; bottom:34px; left:50%; transform:translateX(-50%) rotate(-8deg);
+    font-family:'Dancing Script', cursive;
+    font-size:26px; color:var(--rose-dark); opacity:.55;
+  }
+
+  .slider-row{
+    width:280px; display:flex; align-items:center; gap:10px; margin-top:8px;
+  }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:6px; border-radius:6px;
+    background:linear-gradient(90deg,var(--blush),var(--rose-dark));
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:26px; height:26px; border-radius:50%;
+    background:var(--rose-dark);
+    border:3px solid #fff;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+    cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:26px; height:26px; border-radius:50%;
+    background:var(--rose-dark); border:3px solid #fff; cursor:pointer;
+  }
+  .hint{ font-size:12px; color:var(--wine); opacity:.5; margin-top:10px; }
+
+  .continue-btn{
+    margin-top:22px;
+    opacity:0; pointer-events:none;
+    transform:translateY(6px);
+    transition:all .35s ease;
+  }
+  .continue-btn.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+
+  /* ---------- BUTTON ---------- */
+  button.btn{
+    font-family:'Poppins', sans-serif;
+    font-weight:600; font-size:15px;
+    color:#fff; background:var(--rose-dark);
+    border:none; border-radius:30px;
+    padding:13px 30px;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(214,51,90,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  button.btn:hover{ transform:translateY(-2px); box-shadow:0 9px 20px rgba(214,51,90,.4); }
+  button.btn:active{ transform:translateY(0); }
+  button.btn.ghost{
+    background:transparent; color:var(--rose-dark);
+    border:2px solid var(--rose-dark); box-shadow:none;
+  }
+
+  /* ---------- SCENE 2: PASADA / REGALOS ---------- */
+  #gift-hint{ font-size:14px; opacity:.6; margin-top:8px; }
+  #gift-canvas-zone{ width:100%; height:220px; }
+  .accent-photo{
+    width:170px; height:115px; object-fit:cover;
+    border-radius:16px; margin-bottom:14px;
+    box-shadow:0 10px 24px rgba(92,27,51,.18);
+    border:4px solid #fff;
+  }
+
+  /* ---------- SCENE 3: RAMO ---------- */
+  .bouquet-photo-wrap{
+    width:240px; height:240px; border-radius:50%;
+    overflow:hidden; margin:12px 0 20px;
+    box-shadow:0 14px 30px rgba(92,27,51,.18);
+    border:6px solid #fff;
+  }
+  .bouquet-photo{ width:100%; height:100%; object-fit:cover; display:block; }
+  .note-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    width:100%; margin-bottom:20px;
+  }
+  .note{
+    background:#fff; border:1px solid var(--blush); border-radius:14px;
+    padding:12px 10px; font-size:12.5px; line-height:1.35; color:var(--wine);
+    box-shadow:0 4px 10px rgba(92,27,51,.06);
+  }
+
+  /* ---------- SCENE 4: CANCIÓN ---------- */
+  .player-card{
+    width:100%; background:#fff; border-radius:22px;
+    padding:22px; box-shadow:0 10px 30px rgba(92,27,51,.12);
+  }
+  .art{
+    width:100%; aspect-ratio:16/10; border-radius:16px;
+    background-color:var(--blush);
+    background-size:cover; background-position:center;
+    margin-bottom:16px; overflow:hidden; position:relative;
+  }
+  .song-title{ font-weight:600; font-size:16px; margin-bottom:2px; }
+  .song-artist{ font-size:13px; opacity:.6; margin-bottom:16px; }
+  .controls{ display:flex; align-items:center; justify-content:center; gap:22px; }
+  .ctrl{ background:none; border:none; cursor:pointer; color:var(--wine); opacity:.75; }
+  .ctrl.play{
+    width:52px; height:52px; border-radius:50%;
+    background:var(--rose-dark); color:#fff; opacity:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .eq{ display:flex; align-items:flex-end; gap:3px; height:18px; }
+  .eq span{ width:3px; background:var(--rose-dark); border-radius:2px; animation:eq 1s infinite ease-in-out; }
+  .eq span:nth-child(1){height:40%; animation-delay:0s;}
+  .eq span:nth-child(2){height:100%; animation-delay:.15s;}
+  .eq span:nth-child(3){height:60%; animation-delay:.3s;}
+  .eq span:nth-child(4){height:80%; animation-delay:.45s;}
+  @keyframes eq{ 0%,100%{transform:scaleY(.4);} 50%{transform:scaleY(1);} }
+  .eq.paused span{ animation-play-state:paused; }
+
+  /* ---------- SCENE 5: CARTA ---------- */
+  .letter-card{
+    width:100%; background:#fffaf7; border-radius:6px;
+    padding:28px 24px; text-align:left;
+    box-shadow:0 10px 30px rgba(92,27,51,.12);
+    border-top:5px solid var(--rose);
+    font-size:14.5px; line-height:1.75; color:var(--wine);
+    max-height:52vh; overflow-y:auto;
+  }
+  .letter-card p{ margin:0 0 14px; }
+  .signature{
+    font-family:'Dancing Script', cursive;
+    font-size:26px; color:var(--rose-dark); text-align:right; margin-top:6px;
+  }
+
+  .top-nav{
+    position:absolute; top:18px; right:18px; z-index:2;
+  }
+  .top-nav button{
+    background:rgba(255,255,255,.7); border:none; border-radius:20px;
+    padding:8px 16px; font-family:'Poppins'; font-weight:600; font-size:13px;
+    color:var(--rose-dark); cursor:pointer;
+  }
+
+  .row-gap{ margin-top:18px; display:flex; gap:10px; }
+
+  @media (max-width:380px){
+    .gauge-wrap, .slider-row{ width:240px; }
+    .bouquet-stage{ width:230px; height:230px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+
+  <!-- SCENE 1: PRUEBA DEL AMOR -->
+  <section class="scene active" id="scene-test">
+    <svg id="mascot" viewBox="0 0 200 200" data-state="neutral">
+      <!-- orejas -->
+      <path d="M55 70 L40 20 L85 60 Z" fill="#fff" stroke="var(--line)" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M145 70 L160 20 L115 60 Z" fill="#fff" stroke="var(--line)" stroke-width="6" stroke-linejoin="round"/>
+      <!-- cabeza -->
+      <ellipse cx="100" cy="115" rx="68" ry="58" fill="#fff" stroke="var(--line)" stroke-width="6"/>
+
+      <!-- estado neutral -->
+      <g class="st-neutral">
+        <circle cx="78" cy="112" r="5" fill="var(--line)"/>
+        <circle cx="122" cy="112" r="5" fill="var(--line)"/>
+        <line x1="90" y1="140" x2="110" y2="140" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/>
+      </g>
+
+      <!-- estado dolido -->
+      <g class="st-hurt">
+        <line x1="70" y1="104" x2="86" y2="120" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/>
+        <line x1="86" y1="104" x2="70" y2="120" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/>
+        <line x1="114" y1="104" x2="130" y2="120" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/>
+        <line x1="130" y1="104" x2="114" y2="120" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M90 138 Q100 130 110 138" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M138 75 q6 10 0 16" stroke="#7ec8e3" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- estado llorando -->
+      <g class="st-cry">
+        <path d="M70 110 Q78 100 86 110" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M114 110 Q122 100 130 110" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M76 118 q-4 14 0 20 q6 -2 4 -16 Z" fill="#7ec8e3"/>
+        <path d="M124 118 q-4 14 0 20 q6 -2 4 -16 Z" fill="#7ec8e3"/>
+        <ellipse cx="100" cy="142" rx="9" ry="7" fill="var(--line)"/>
+      </g>
+
+      <!-- estado feliz -->
+      <g class="st-happy">
+        <path d="M68 108 Q78 96 88 108" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M112 108 Q122 96 132 108" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M84 132 Q100 150 116 132" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <circle cx="64" cy="128" r="9" fill="#ffb6c6" opacity=".8"/>
+        <circle cx="136" cy="128" r="9" fill="#ffb6c6" opacity=".8"/>
+        <path d="M150 55 c3 -7 12 -7 12 1 c0 8 -12 14 -12 14 c0 0 -12 -6 -12 -14 c0 -8 9 -8 12 -1Z" fill="var(--rose)"/>
+      </g>
+
+      <!-- estado amor -->
+      <g class="st-love">
+        <path d="M70 108 c2 -6 10 -6 10 1 c0 6 -10 11 -10 11 c0 0 -10 -5 -10 -11 c0 -7 8 -7 10 -1Z" fill="var(--rose-dark)"/>
+        <path d="M114 108 c2 -6 10 -6 10 1 c0 6 -10 11 -10 11 c0 0 -10 -5 -10 -11 c0 -7 8 -7 10 -1Z" fill="var(--rose-dark)"/>
+        <path d="M82 130 Q100 150 118 130" stroke="var(--line)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <circle cx="62" cy="126" r="10" fill="#ffb6c6"/>
+        <circle cx="138" cy="126" r="10" fill="#ffb6c6"/>
+        <path d="M150 50 c3 -8 13 -8 13 1 c0 9 -13 16 -13 16 c0 0 -13 -7 -13 -16 c0 -9 10 -9 13 -1Z" fill="var(--rose)"/>
+        <path d="M40 60 c2 -5 8 -5 8 1 c0 5 -8 10 -8 10 c0 0 -8 -5 -8 -10 c0 -6 6 -6 8 -1Z" fill="var(--rose)"/>
+      </g>
+    </svg>
+
+    <div class="question" id="questionText">¿Cuánto me amas?</div>
+    <div class="percent" id="percentText">0%</div>
+
+    <div class="gauge-wrap">
+      <svg viewBox="0 0 280 150">
+        <path d="M20 140 A120 120 0 0 1 76 32"  stroke="#FBD3DC" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <path d="M76 32 A120 120 0 0 1 132 20"  stroke="#F6A9BC" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <path d="M132 20 A120 120 0 0 1 188 34" stroke="#EF7F9C" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <path d="M188 34 A120 120 0 0 1 232 76" stroke="#E4557E" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <path d="M232 76 A120 120 0 0 1 260 140" stroke="#D6335A" stroke-width="22" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="gauge-label">amor</div>
+      <div class="needle" id="needle"></div>
+    </div>
+
+    <div class="slider-row">
+      <input type="range" id="loveSlider" min="0" max="130" value="0" step="1" aria-label="Nivel de amor">
+    </div>
+    <div class="hint">Desliza para responder…</div>
+
+    <div class="continue-btn" id="continueWrap">
+      <button class="btn" id="btnToGifts">Continuar →</button>
+    </div>
+  </section>
+
+  <!-- SCENE 2: PASASTE LA PRUEBA -->
+  <section class="scene" id="scene-passed">
+    <img class="accent-photo" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=80" alt="Regalo envuelto con listón">
+    <h1 style="font-size:28px;">Pasaste la prueba del amor</h1>
+    <p style="opacity:.7; margin-top:0;">Tus sorpresas te esperan…</p>
+    <div id="gift-canvas-zone"></div>
+    <div id="gift-hint">Toca los regalos para abrirlos ✨</div>
+  </section>
+
+  <!-- SCENE 3: RAMO -->
+  <section class="scene" id="scene-bouquet">
+    <h2>Tu ramo</h2>
+    <div class="bouquet-photo-wrap">
+      <img class="bouquet-photo" src="https://images.unsplash.com/photo-1615911285752-adf21310705a?auto=format&fit=crop&w=900&q=80" alt="Ramo de rosas rojas">
+    </div>
+    <div class="note-grid">
+      <div class="note">Haces florecer mi corazón.</div>
+      <div class="note">Te elijo a ti cada día.</div>
+      <div class="note">La vida es más dulce contigo.</div>
+      <div class="note">Mi amor por ti no deja de crecer.</div>
+      <div class="note">Conviertes cada momento en algo especial.</div>
+      <div class="note">Mi corazón siempre te va a elegir.</div>
+    </div>
+    <button class="btn" id="btnToSong">Siguiente →</button>
+  </section>
+
+  <!-- SCENE 4: CANCIÓN -->
+  <section class="scene" id="scene-song">
+    <h2 style="margin-bottom:16px;">Nuestra canción</h2>
+    <div class="player-card">
+      <div class="art" style="background-image:url('https://images.unsplash.com/photo-1753373130410-5dadc449753c?auto=format&fit=crop&w=900&q=80');"></div>
+      <div class="song-title">Birds of a Feather</div>
+      <div class="song-artist">Billie Eilish</div>
+      <audio id="audioEl" src="canción.mp3" preload="auto"></audio>
+      <div class="controls">
+        <button class="ctrl" aria-label="Anterior">⏮</button>
+        <button class="ctrl play" id="btnPlay" aria-label="Reproducir">▶</button>
+        <button class="ctrl" aria-label="Siguiente">⏭</button>
+      </div>
+      <div class="eq paused" id="eq" style="justify-content:center; margin-top:14px;">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+    <button class="btn" id="btnToLetter" style="margin-top:22px;">Siguiente →</button>
+  </section>
+
+  <!-- SCENE 5: CARTA -->
+  <section class="scene" id="scene-letter">
+    <h2>Una carta desde mi corazón</h2>
+    <div class="letter-card">
+      <p>Haces que mi vida se sienta más bonita y con más sentido, y me siento muy afortunado de tenerte. Te amo con todo mi corazón y no puedo esperar para seguir amándote el resto de mi vida.</p>
+      <p>Me haces sonreír, me haces sentir seguro, y traes tanta felicidad a mi mundo. Sé que te lo digo todos los días, pero de verdad eres la persona más hermosa que conozco.</p>
+      <p>Gracias por ser tú y por llenar mi corazón de tanto amor. Pase lo que pase, siempre te voy a elegir a ti.</p>
+      <div class="signature">Siempre tuyo 💗</div>
+    </div>
+    <div class="row-gap">
+      <button class="btn ghost" id="btnRestart">Volver a empezar</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =========================================================
+   FONDO ANIMADO CON THREE.JS — corazones flotantes + regalos
+   ========================================================= */
+let renderer, scene, camera, W, H;
+let heartSprites = [];
+let giftGroup;
+let loveLevel = 0; // 0-1, controla color/intensidad de las partículas
+let giftsOpened = false;
+const clock = new THREE.Clock();
+
+function initThree(){
+  const canvas = document.getElementById('bg-canvas');
+  W = window.innerWidth; H = window.innerHeight;
+
+  renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-W/2, W/2, H/2, -H/2, -1000, 1000);
+  camera.position.z = 10;
+
+  buildHearts();
+  buildBirds();
+  buildGifts();
+  window.addEventListener('resize', onResize);
+  document.addEventListener('pointerdown', onCanvasClick);
+  animate();
+}
+
+function heartTexture(color){
+  const s = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  const t = s*0.3;
+  ctx.moveTo(s/2, t);
+  ctx.bezierCurveTo(s/2, t-s*0.3, 0, t-s*0.15, 0, t);
+  ctx.bezierCurveTo(0, s*0.6, s*0.5*0.6, s*0.42, s/2, s*0.95);
+  ctx.bezierCurveTo(s*0.5*1.4, s*0.42, s, s*0.6, s, t);
+  ctx.bezierCurveTo(s, t-s*0.15, s/2, t-s*0.3, s/2, t);
+  ctx.fill();
+  return new THREE.CanvasTexture(c);
+}
+
+function buildHearts(){
+  const texA = heartTexture('#ffc2d1');
+  const texB = heartTexture('#ff6f8e');
+  const count = 46;
+  for(let i=0;i<count;i++){
+    const mat = new THREE.SpriteMaterial({
+      map: Math.random() < .5 ? texA : texB,
+      transparent:true,
+      opacity: 0.25 + Math.random()*0.35,
+      depthTest:false
+    });
+    const sp = new THREE.Sprite(mat);
+    const size = 14 + Math.random()*22;
+    sp.scale.set(size, size, 1);
+    sp.position.set(
+      (Math.random()-0.5) * W,
+      (Math.random()-0.5) * H,
+      -Math.random()*50
+    );
+    sp.userData.speed = 10 + Math.random()*18;
+    sp.userData.drift = (Math.random()-0.5) * 12;
+    sp.userData.rot = (Math.random()-0.5) * 0.6;
+    scene.add(sp);
+    heartSprites.push(sp);
+  }
+}
+
+function birdTexture(){
+  const s = 64;
+  const c = document.createElement('canvas');
+  c.width = s; c.height = s*0.55;
+  const ctx = c.getContext('2d');
+  ctx.strokeStyle = '#4a3350';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(3, s*0.32);
+  ctx.quadraticCurveTo(s*0.25, 2, s*0.5, s*0.3);
+  ctx.quadraticCurveTo(s*0.75, 2, s-3, s*0.32);
+  ctx.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
+let birdGroup;
+function buildBirds(){
+  birdGroup = new THREE.Group();
+  birdGroup.visible = false;
+  const tex = birdTexture();
+  const count = 12;
+  for(let i=0;i<count;i++){
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent:true, opacity:0.85, depthTest:false });
+    const sp = new THREE.Sprite(mat);
+    const size = 22 + Math.random()*22;
+    sp.scale.set(size, size*0.55, 1);
+    resetBird(sp, true);
+    birdGroup.add(sp);
+  }
+  scene.add(birdGroup);
+}
+
+function resetBird(sp, randomStart){
+  sp.userData.speed = 90 + Math.random()*70;
+  sp.userData.flapSpeed = 4 + Math.random()*3;
+  sp.userData.flapPhase = Math.random()*Math.PI*2;
+  sp.userData.baseY = -H*0.1 + Math.random()*H*0.55;
+  sp.position.y = sp.userData.baseY;
+  sp.position.z = -Math.random()*40;
+  sp.position.x = randomStart
+    ? (Math.random()*W - W/2)
+    : -W/2 - 60 - Math.random()*200;
+}
+
+function makeBox(x, color){
+  const g = new THREE.Group();
+  const bodyMat = new THREE.MeshBasicMaterial({ color });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(70,60,70), bodyMat);
+  g.add(body);
+
+  const ribbonMat = new THREE.MeshBasicMaterial({ color:0xffffff });
+  const rV = new THREE.Mesh(new THREE.BoxGeometry(14,62,72), ribbonMat);
+  const rH = new THREE.Mesh(new THREE.BoxGeometry(72,62,14), ribbonMat);
+  g.add(rV, rH);
+
+  const bowMat = new THREE.MeshBasicMaterial({ color:0xffffff });
+  const bowL = new THREE.Mesh(new THREE.SphereGeometry(14,10,10), bowMat);
+  bowL.scale.set(1,0.7,0.6); bowL.position.set(-10,34,0);
+  const bowR = bowL.clone(); bowR.position.set(10,34,0);
+  const bowC = new THREE.Mesh(new THREE.SphereGeometry(7,10,10), bowMat);
+  bowC.position.set(0,34,0);
+  g.add(bowL, bowR, bowC);
+
+  g.position.set(x, -10, 0);
+  g.userData.baseY = -10;
+  g.userData.phase = Math.random()*Math.PI*2;
+  return g;
+}
+
+function buildGifts(){
+  giftGroup = new THREE.Group();
+  giftGroup.visible = false;
+  giftGroup.add(makeBox(-100, 0xA9D9E0));
+  giftGroup.add(makeBox(0, 0xFFC2D1));
+  giftGroup.add(makeBox(100, 0xE9C08D));
+  scene.add(giftGroup);
+}
+
+function onResize(){
+  W = window.innerWidth; H = window.innerHeight;
+  renderer.setSize(W,H);
+  camera.left = -W/2; camera.right = W/2;
+  camera.top = H/2; camera.bottom = -H/2;
+  camera.updateProjectionMatrix();
+}
+
+function onCanvasClick(e){
+  if(!giftGroup.visible || giftsOpened) return;
+  const mouse = new THREE.Vector2(
+    (e.clientX / W) * 2 - 1,
+    -(e.clientY / H) * 2 + 1
+  );
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(giftGroup.children, true);
+  if(hits.length){ openGifts(); }
+}
+
+function openGifts(){
+  giftsOpened = true;
+  document.getElementById('gift-hint').textContent = '¡Ábrelos con cariño! 💝';
+  const start = clock.getElapsedTime();
+  function pop(){
+    const t = clock.getElapsedTime() - start;
+    const s = 1 + Math.min(t*2, 0.5);
+    giftGroup.children.forEach((g,i)=>{
+      g.rotation.y += 0.15;
+      g.scale.set(s,s,s);
+    });
+    if(t < 0.6){ requestAnimationFrame(pop); }
+    else{ setTimeout(()=> goTo('scene-bouquet'), 250); }
+  }
+  pop();
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  heartSprites.forEach(sp=>{
+    sp.position.y += sp.userData.speed * 0.016;
+    sp.position.x += Math.sin(t + sp.userData.rot*10) * 0.15;
+    if(sp.position.y > H/2 + 40){
+      sp.position.y = -H/2 - 20;
+      sp.position.x = (Math.random()-0.5) * W;
+    }
+    sp.material.rotation += sp.userData.rot * 0.01;
+    const targetOp = 0.25 + loveLevel*0.45 + Math.random()*0.02;
+    sp.material.opacity += (targetOp - sp.material.opacity) * 0.02;
+  });
+
+  if(giftGroup && giftGroup.visible && !giftsOpened){
+    giftGroup.children.forEach(g=>{
+      g.position.y = g.userData.baseY + Math.sin(t*1.4 + g.userData.phase)*6;
+      g.rotation.y = Math.sin(t*0.6 + g.userData.phase)*0.35;
+    });
+  }
+
+  if(birdGroup && birdGroup.visible){
+    birdGroup.children.forEach(sp=>{
+      sp.position.x += sp.userData.speed * 0.016;
+      sp.position.y = sp.userData.baseY + Math.sin(t*sp.userData.flapSpeed + sp.userData.flapPhase) * 10;
+      const flap = 0.55 + Math.abs(Math.sin(t*sp.userData.flapSpeed*2 + sp.userData.flapPhase)) * 0.25;
+      sp.scale.y = sp.scale.x * flap;
+      if(sp.position.x > W/2 + 60){
+        resetBird(sp, false);
+      }
+    });
+  }
+
+  renderer.render(scene, camera);
+}
+
+/* =========================================================
+   LÓGICA DE LA PRUEBA DEL AMOR
+   ========================================================= */
+const slider = document.getElementById('loveSlider');
+const needle = document.getElementById('needle');
+const percentText = document.getElementById('percentText');
+const questionText = document.getElementById('questionText');
+const mascot = document.getElementById('mascot');
+const continueWrap = document.getElementById('continueWrap');
+
+function updateFromSlider(){
+  const v = parseInt(slider.value, 10);
+  const clampedForNeedle = Math.min(v, 100);
+  const deg = -90 + (clampedForNeedle/100) * 180;
+  needle.style.transform = `translateX(-50%) rotate(${deg}deg)`;
+
+  let state, msg, label;
+
+  if(v < 15){
+    state='neutral'; msg='¿Cuánto me amas?'; label = v + '%';
+  } else if(v < 45){
+    state='hurt'; msg='Eso duele…'; label = v + '%';
+  } else if(v < 80){
+    state='cry'; msg='¿Solo la mitad? ¿En serio?'; label = v + '%';
+  } else if(v < 97){
+    state='happy'; msg='Así me gusta más…'; label = v + '%';
+  } else if(v <= 100){
+    state='love'; msg='¡Respuesta correcta!'; label = '100%';
+  } else if(v < 118){
+    state='love'; msg='¡Respuesta correcta!';
+    label = Math.round(100 + (v-100) * 32) + '%';
+  } else {
+    state='love'; msg='¡Respuesta correcta!'; label = '∞';
+  }
+
+  mascot.setAttribute('data-state', state);
+  questionText.textContent = msg;
+  percentText.textContent = label;
+
+  loveLevel = clampedForNeedle/100;
+
+  if(v >= 97){ continueWrap.classList.add('show'); }
+  else{ continueWrap.classList.remove('show'); }
+}
+slider.addEventListener('input', updateFromSlider);
+updateFromSlider();
+
+/* =========================================================
+   NAVEGACIÓN ENTRE ESCENAS
+   ========================================================= */
+function goTo(id){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  giftGroup.visible = (id === 'scene-passed');
+}
+
+document.getElementById('btnToGifts').addEventListener('click', ()=>{
+  giftsOpened = false;
+  document.getElementById('gift-hint').textContent = 'Toca los regalos para abrirlos ✨';
+  giftGroup.children.forEach(g=> g.scale.set(1,1,1));
+  goTo('scene-passed');
+});
+
+document.getElementById('btnToSong').addEventListener('click', ()=> goTo('scene-song'));
+document.getElementById('btnToLetter').addEventListener('click', ()=> goTo('scene-letter'));
+
+document.getElementById('btnRestart').addEventListener('click', ()=>{
+  slider.value = 0;
+  updateFromSlider();
+  giftsOpened = false;
+  goTo('scene-test');
+});
+
+/* =========================================================
+   REPRODUCTOR — reproduce el archivo de audio descargado
+   (el mp3 debe llamarse "canción.mp3" y estar junto a este html;
+   si cambias el nombre del archivo, actualiza también el atributo
+   src del <audio id="audioEl"> más arriba)
+   ========================================================= */
+const btnPlay = document.getElementById('btnPlay');
+const eq = document.getElementById('eq');
+const audioEl = document.getElementById('audioEl');
+let playing = false;
+
+btnPlay.addEventListener('click', ()=>{
+  if(playing){
+    audioEl.pause();
+  } else {
+    audioEl.play().catch(()=>{
+      alert('No se pudo reproducir el archivo. Verifica que "cancion.mp3" esté en la misma carpeta que este HTML.');
+    });
+  }
+});
+
+audioEl.addEventListener('play', ()=>{
+  playing = true;
+  btnPlay.textContent = '❚❚';
+  eq.classList.remove('paused');
+  document.body.classList.add('sky-mode');
+  if(birdGroup){ birdGroup.visible = true; }
+});
+audioEl.addEventListener('pause', ()=>{
+  playing = false;
+  btnPlay.textContent = '▶';
+  eq.classList.add('paused');
+  document.body.classList.remove('sky-mode');
+  if(birdGroup){ birdGroup.visible = false; }
+});
+audioEl.addEventListener('ended', ()=>{
+  playing = false;
+  btnPlay.textContent = '▶';
+  eq.classList.add('paused');
+  document.body.classList.remove('sky-mode');
+  if(birdGroup){ birdGroup.visible = false; }
+});
+
+initThree();
+</script>
+</body>
+</html>
